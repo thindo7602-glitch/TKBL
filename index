@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thời Khóa Biểu Lớp 4D</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f0f2f5; margin: 0; padding: 15px; }
+        .container { max-width: 950px; margin: 0 auto; }
+        .status-box { background: #fff; padding: 15px 20px; border-radius: 10px; border-left: 6px solid #1e3a8a; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+        .status-box.active { border-left-color: #16a34a; background: #f0fdf4; }
+        .clock { font-size: 1.4rem; font-weight: bold; color: #1e3a8a; }
+        .status-box.active .clock { color: #16a34a; }
+        .task { font-size: 1.1rem; font-weight: 600; margin-top: 5px; }
+        .table-box { background: #fff; border-radius: 10px; padding: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; text-align: center; }
+        th, td { border: 1px solid #cbd5e1; padding: 10px; font-size: 0.95rem; }
+        th { background: #1e293b; color: white; }
+        .break { background: #f1f5f9; color: #64748b; font-style: italic; }
+        .active-cell { background: #16a34a !important; color: white !important; font-weight: bold; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+        .footer { margin-top: 15px; font-size: 0.9rem; color: #475569; border-top: 1px dashed #cbd5e1; padding-top: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="status-box" id="statusBox">
+        <div>
+            <div class="clock" id="clock">00:00:00</div>
+            <div class="task" id="task">Đang kiểm tra lịch...</div>
+        </div>
+        <div style="font-weight:bold; font-size:1.1rem" id="day">Thứ ...</div>
+    </div>
+
+    <div class="table-box">
+        <h2 style="margin-top:0; color:#1e293b;">📅 THỜI KHÓA BIỂU LỚP 4D (2021-2022)</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Tiết / Giờ</th>
+                    <th>Thứ 2</th>
+                    <th>Thứ 3</th>
+                    <th>Thứ 4</th>
+                    <th>Thứ 5</th>
+                    <th>Thứ 6</th>
+                </tr>
+            </thead>
+            <tbody id="body"></tbody>
+        </table>
+        <div class="footer">
+            <b>GVCN:</b> Đỗ Văn Thìn | <b>SĐT:</b> 088 881 9957
+        </div>
+    </div>
+</div>
+
+<script>
+    const slots = [
+        { id: 'TB', name: 'Truy bài', start: '07:00', end: '07:15', isBreak: true },
+        { id: '1', name: 'Tiết 1 (Sáng)', start: '07:15', end: '07:50' },
+        { id: '2', name: 'Tiết 2 (Sáng)', start: '07:50', end: '08:25' },
+        { id: '3', name: 'Tiết 3 (Sáng)', start: '08:25', end: '09:00' },
+        { id: 'RC1', name: 'Ra chơi (Sáng)', start: '09:00', end: '09:25', isBreak: true },
+        { id: '4', name: 'Tiết 4 (Sáng)', start: '09:25', end: '10:00' },
+        { id: '5', name: 'Tiết 5 (Sáng)', start: '10:00', end: '10:35' },
+        { id: 'TRUA', name: 'Nghỉ trưa / Ra về', start: '10:35', end: '14:15', isBreak: true },
+        { id: '6', name: 'Tiết 1 (Chiều)', start: '14:15', end: '14:55' },
+        { id: '7', name: 'Tiết 2 (Chiều)', start: '14:55', end: '15:35' },
+        { id: 'RC2', name: 'Ra chơi (Chiều)', start: '15:35', end: '16:00', isBreak: true },
+        { id: '8', name: 'Tiết 3 (Chiều)', start: '16:00', end: '16:40' },
+        { id: 'VE', name: 'Ra về (Chiều)', start: '16:40', end: '17:20', isBreak: true }
+    ];
+
+    const data = {
+        '1': { T2: 'HĐTN', T3: 'Toán', T4: 'Toán', T5: 'Toán', T6: 'Toán' },
+        '2': { T2: 'Tiếng Anh', T3: 'Tiếng Việt', T4: 'Tiếng Anh', T5: 'Tiếng Anh', T6: 'Nhạc' },
+        '3': { T2: 'Tiếng Việt', T3: 'Tiếng Việt', T4: 'Mĩ thuật', T5: 'Tiếng Việt', T6: 'Tiếng Việt' },
+        '4': { T2: 'Tiếng Việt', T3: 'Lịch sử', T4: 'Thể dục', T5: 'Tiếng Việt', T6: 'Tiếng Việt' },
+        '5': { T2: 'Đạo đức', T3: 'TVĐ', T4: '', T5: 'Khoa học', T6: 'HĐTN' },
+        '6': { T2: 'Toán', T3: 'Toán - TC', T4: 'Địa lí', T5: '', T6: '' },
+        '7': { T2: 'Khoa học', T3: 'Toán - TC', T4: 'HĐTN', T5: '', T6: '' },
+        '8': { T2: 'Thể dục', T3: 'Tiếng Việt - TC', T4: 'Kĩ Thuật', T5: '', T6: '' }
+    };
+
+    const days = { 1: 'T2', 2: 'T3', 3: 'T4', 4: 'T5', 5: 'T6' };
+    const dayNames = { 1: 'Thứ Hai', 2: 'Thứ Ba', 3: 'Thứ Tư', 4: 'Thứ Năm', 5: 'Thứ Sáu', 6: 'Thứ Bảy', 0: 'Chủ Nhật' };
+
+    function initTable() {
+        const tbody = document.getElementById('body');
+        tbody.innerHTML = '';
+        slots.forEach(s => {
+            const tr = document.createElement('tr');
+            if (s.isBreak) {
+                tr.className = 'break';
+                tr.innerHTML = `<td><b>${s.name}</b><br><small>(${s.start} - ${s.end})</small></td><td colspan="5">${s.name}</td>`;
+            } else {
+                let html = `<td><b>${s.name}</b><br><small style="color:#64748b">${s.start} - ${s.end}</small></td>`;
+                for (let i = 2; i <= 6; i++) {
+                    const key = `T${i}`;
+                    html += `<td id="cell-${s.id}-${key}">${data[s.id]?.[key] || ''}</td>`;
+                }
+                tr.innerHTML = html;
+            }
+            tbody.appendChild(tr);
+        });
+    }
+
+    function toMin(t) {
+        const [h, m] = t.split(':').map(Number);
+        return h * 60 + m;
+    }
+
+    function update() {
+        const now = new Date();
+        const dIdx = now.getDay();
+        const curMin = now.getHours() * 60 + now.getMinutes();
+
+        document.getElementById('clock').innerText = now.toLocaleTimeString('vi-VN');
+        document.getElementById('day').innerText = dayNames[dIdx];
+
+        document.querySelectorAll('.active-cell').forEach(e => e.classList.remove('active-cell'));
+        const box = document.getElementById('statusBox');
+        const task = document.getElementById('task');
+        const curDay = days[dIdx];
+
+        if (!curDay) {
+            box.classList.remove('active');
+            task.innerText = '🏖️ Hôm nay là cuối tuần (Không có lịch học)';
+            return;
+        }
+
+        const active = slots.find(s => curMin >= toMin(s.start) && curMin < toMin(s.end));
+
+        if (active) {
+            box.classList.add('active');
+            if (active.isBreak) {
+                task.innerText = `☕ Đang trong giờ: ${active.name} (${active.start} - ${active.end})`;
+            } else {
+                const sub = data[active.id]?.[curDay] || 'Nghỉ / Không có tiết';
+                task.innerText = `📖 Đang học: ${active.name} — Môn: ${sub}`;
+                const cell = document.getElementById(`cell-${active.id}-${curDay}`);
+                if (cell) cell.classList.add('active-cell');
+            }
+        } else {
+            box.classList.remove('active');
+            task.innerText = curMin < toMin(slots[0].start) ? '🌅 Chưa đến giờ học' : '🌙 Đã hết giờ học trong ngày';
+        }
+    }
+
+    initTable();
+    update();
+    setInterval(update, 1000);
+</script>
+
+</body>
+</html>
