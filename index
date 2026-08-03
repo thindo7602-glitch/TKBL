@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thời Khóa Biểu Lớp 4D - Realtime Timeline</title>
+    <style>
+        :root {
+            --primary: #1e3a8a;
+            --primary-hover: #1d4ed8;
+            --active-bg: #16a34a;
+            --active-text: #ffffff;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --border: #cbd5e1;
+            --text: #0f172a;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        .status-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 24px;
+            border-left: 6px solid var(--primary);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .status-card.is-active {
+            border-left-color: var(--active-bg);
+            background: #f0fdf4;
+        }
+
+        .clock-display {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .status-card.is-active .clock-display {
+            color: var(--active-bg);
+        }
+
+        .task-display {
+            font-size: 1.15rem;
+            font-weight: 600;
+            margin-top: 4px;
+        }
+
+        .day-badge {
+            background: var(--primary);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            padding: 10px 18px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-hover);
+        }
+
+        .btn-secondary {
+            background: #e2e8f0;
+            color: var(--text);
+        }
+
+        .btn-secondary:hover {
+            background: #cbd5e1;
+        }
+
+        .table-responsive {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: center;
+        }
+
+        th, td {
+            border: 1px solid var(--border);
+            padding: 10px;
+            min-width: 100px;
+        }
+
+        th {
+            background: #1e293b;
+            color: white;
+            font-weight: 600;
+        }
+
+        .row-break {
+            background-color: #f1f5f9;
+            color: #64748b;
+            font-style: italic;
+        }
+
+        input[type="text"], input[type="time"] {
+            width: 100%;
+            padding: 6px 8px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        .is-current-cell {
+            background-color: var(--active-bg) !important;
+            color: var(--active-text) !important;
+            font-weight: bold;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.8; }
+            100% { opacity: 1; }
+        }
+
+        .section-title {
+            margin-bottom: 15px;
+            font-size: 1.25rem;
+            color: #1e293b;
+        }
+
+        .teacher-info {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px dashed var(--border);
+            font-size: 0.95rem;
+            color: #475569;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="status-card" id="statusCard">
+        <div>
+            <div class="clock-display" id="clock">00:00:00</div>
+            <div class="task-display" id="currentTask">Đang tải dữ liệu...</div>
+        </div>
+        <div class="day-badge" id="dayOfWeek">Thứ ...</div>
+    </div>
+
+    <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <div>
+                <h2 class="section-title" style="margin:0;">📅 THỜI KHÓA BIỂU - LỚP 4D</h2>
+                <small style="color: #64748b;">Năm học 2021 - 2022 (Áp dụng từ 06/9/2021)</small>
+            </div>
+            <button class="btn-primary" onclick="toggleEditMode()" id="editBtn">⚙️ Chỉnh Sửa Lịch</button>
+        </div>
+
+        <div class="table-responsive">
+            <table id="scheduleTable">
+                <thead>
+                    <tr>
+                        <th>Tiết / Giờ</th>
+                        <th>Thứ Hai</th>
+                        <th>Thứ Ba</th>
+                        <th>Thứ Tư</th>
+                        <th>Thứ Năm</th>
+                        <th>Thứ Sáu</th>
+                    </tr>
+                </thead>
+                <tbody id="scheduleBody"></tbody>
+            </table>
+        </div>
+
+        <div class="teacher-info">
+            <strong>GVCN:</strong> Đỗ Văn Thìn | <strong>SĐT liên hệ:</strong> 088 881 9957
+        </div>
+    </div>
+
+    <div class="card" id="editFormCard" style="display: none;">
+        <h2 class="section-title">✏️ Cấu Hình Thời Gian & Môn Học</h2>
+        <p style="margin-bottom: 15px; color: #64748b; font-size: 0.9rem;">
+            Bạn có thể tùy chỉnh thời gian hoặc nội dung môn học. Dữ liệu sẽ tự động lưu vào trình duyệt của bạn.
+        </p>
+        
+        <div class="controls">
+            <button class="btn-secondary" onclick="addSlot()">+ Thêm Khung Giờ</button>
+            <button class="btn-primary" onclick="saveData()">💾 Lưu Lịch Học</button>
+        </div>
+
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Tên Tiết</th>
+                        <th>Bắt đầu</th>
+                        <th>Kết thúc</th>
+                        <th>Thứ Hai</th>
+                        <th>Thứ Ba</th>
+                        <th>Thứ Tư</th>
+                        <th>Thứ Năm</th>
+                        <th>Thứ Sáu</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody id="editBody"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Dữ liệu thời gian biểu chính xác từ hình ảnh 1
+    const defaultTimeSlots = [
+        { id: 'TB', name: 'Truy bài', start: '07:00', end: '07:15', isBreak: true },
+        { id: '1', name: 'Tiết 1', start: '07:15', end: '07:50' },
+        { id: '2', name: 'Tiết 2', start: '07:50', end: '08:25' },
+        { id: '3', name: 'Tiết 3', start: '08:25', end: '09:00' },
+        { id: 'RC_SANG', name: 'Ra chơi (Sáng)', start: '09:00', end: '09:25', isBreak: true },
+        { id: '4', name: 'Tiết 4', start: '09:25', end: '10:00' },
+        { id: '5', name: 'Tiết 5', start: '10:00', end: '10:35' },
+        { id: 'NGHI_TRUA', name: 'Nghỉ trưa / Ra về', start: '10:35', end: '14:15', isBreak: true },
+        { id: '6', name: 'Tiết 1 (Chiều)', start: '14:15', end: '14:55' },
+        { id: '7', name: 'Tiết 2 (Chiều)', start: '14:55', end: '15:35' },
+        { id: 'RC_CHIEU', name: 'Ra chơi (Chiều)', start: '15:35', end: '16:00', isBreak: true },
+        { id: '8', name: 'Tiết 3 (Chiều)', start: '16:00', end: '16:40' },
+        { id: 'T4_C', name: 'Tiết 4 (Chiều)', start: '16:40', end: '17:20', isBreak: true }
+    ];
+
+    // Dữ liệu thời khóa biểu Lớp 4D từ hình ảnh 2
+    const defaultTimetable = {
+        '1': { T2: 'HĐTN', T3: 'Toán', T4: 'Toán', T5: 'Toán', T6: 'Toán' },
+        '2': { T2: 'Tiếng Anh', T3: 'Tiếng Việt', T4: 'Tiếng Anh', T5: 'Tiếng Anh', T6: 'Nhạc' },
+        '3': { T2: 'Tiếng Việt', T3: 'Tiếng Việt', T4: 'Mĩ thuật', T5: 'Tiếng Việt', T6: 'Tiếng Việt' },
+        '4': { T2: 'Tiếng Việt', T3: 'Lịch sử', T4: 'Thể dục', T5: 'Tiếng Việt', T6: 'Tiếng Việt' },
+        '5': { T2: 'Đạo đức', T3: 'TVĐ', T4: '', T5: 'Khoa học', T6: 'HĐTN' },
+        '6': { T2: 'Toán', T3: 'Toán - TC', T4: 'Địa lí', T5: '', T6: '' },
+        '7': { T2: 'Khoa học', T3: 'Toán - TC', T4: 'HĐTN', T5: '', T6: '' },
+        '8': { T2: 'Thể dục', T3: 'Tiếng Việt - TC', T4: 'Kĩ Thuật', T5: '', T6: '' }
+    };
+
+    let slots = JSON.parse(localStorage.getItem('timeSlots_4D')) || defaultTimeSlots;
+    let timetable = JSON.parse(localStorage.getItem('timetableData_4D')) || defaultTimetable;
+
+    const daysMap = { 1: 'T2', 2: 'T3', 3: 'T4', 4: 'T5', 5: 'T6' };
+    const dayNames = { 1: 'Thứ Hai', 2: 'Thứ Ba', 3: 'Thứ Tư', 4: 'Thứ Năm', 5: 'Thứ Sáu', 6: 'Thứ Bảy', 0: 'Chủ Nhật' };
+
+    function renderDisplayTable() {
+        const tbody = document.getElementById('scheduleBody');
+        tbody.innerHTML = '';
+
+        slots.forEach(slot => {
+            const tr = document.createElement('tr');
+            tr.id = `row-${slot.id}`;
+
+            if (slot.isBreak) {
+                tr.className = 'row-break';
+                tr.innerHTML = `
+                    <td><b>${slot.name}</b><br><small>(${slot.start} - ${slot.end})</small></td>
+                    <td colspan="5">${slot.name}</td>
+                `;
+            } else {
+                let html = `<td><b>${slot.name}</b><br><small style="color:#64748b">${slot.start} - ${slot.end}</small></td>`;
+                for (let i = 2; i <= 6; i++) {
+                    const dayKey = `T${i}`;
+                    const subject = timetable[slot.id]?.[dayKey] || '';
+                    html += `<td id="cell-${slot.id}-${dayKey}">${subject}</td>`;
+                }
+                tr.innerHTML = html;
+            }
+            tbody.appendChild(tr);
+        });
+    }
+
+    function renderEditTable() {
+        const tbody = document.getElementById('editBody');
+        tbody.innerHTML = '';
+
+        slots.forEach((slot, index) => {
+            const tr = document.createElement('tr');
+            let html = `
+                <td><input type="text" value="${slot.name}" onchange="updateSlotMeta(${index}, 'name', this.value)"></td>
+                <td><input type="time" value="${slot.start}" onchange="updateSlotMeta(${index}, 'start', this.value)"></td>
+                <td><input type="time" value="${slot.end}" onchange="updateSlotMeta(${index}, 'end', this.value)"></td>
+            `;
+
+            if (slot.isBreak) {
+                html += `<td colspan="5" style="color:#64748b; font-style:italic;">Khung giờ cố định / Ra chơi / Ra về</td>`;
+            } else {
+                for (let i = 2; i <= 6; i++) {
+                    const dayKey = `T${i}`;
+                    const subject = timetable[slot.id]?.[dayKey] || '';
+                    html += `<td><input type="text" value="${subject}" onchange="updateSubject('${slot.id}', '${dayKey}', this.value)"></td>`;
+                }
+            }
+
+            html += `<td><button style="background:#ef4444; color:white; padding: 4px 8px; border-radius:4px;" onclick="deleteSlot(${index})">Xóa</button></td>`;
+            tr.innerHTML = html;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function updateSlotMeta(index, key, value) {
+        slots[index][key] = value;
+    }
+
+    function updateSubject(slotId, dayKey, value) {
+        if (!timetable[slotId]) timetable[slotId] = {};
+        timetable[slotId][dayKey] = value;
+    }
+
+    function addSlot() {
+        const newId = Date.now().toString();
+        slots.push({ id: newId, name: `Tiết mới`, start: '08:00', end: '08:45' });
+        timetable[newId] = { T2: '', T3: '', T4: '', T5: '', T6: '' };
+        renderEditTable();
+    }
+
+    function deleteSlot(index) {
+        const slotId = slots[index].id;
+        slots.splice(index, 1);
+        delete timetable[slotId];
+        renderEditTable();
+    }
+
+    function saveData() {
+        localStorage.setItem('timeSlots_4D', JSON.stringify(slots));
+        localStorage.setItem('timetableData_4D', JSON.stringify(timetable));
+        renderDisplayTable();
+        updateTimeline();
+        alert('Đã lưu lịch học thành công!');
+    }
+
+    function toggleEditMode() {
+        const card = document.getElementById('editFormCard');
+        const btn = document.getElementById('editBtn');
+        if (card.style.display === 'none') {
+            card.style.display = 'block';
+            btn.innerText = '✖ Đóng Chỉnh Sửa';
+            renderEditTable();
+        } else {
+            card.style.display = 'none';
+            btn.innerText = '⚙️ Chỉnh Sửa Lịch';
+        }
+    }
+
+    function timeToMinutes(t) {
+        if (!t) return 0;
+        const [h, m] = t.split(':').map(Number);
+        return h * 60 + m;
+    }
+
+    function updateTimeline() {
+        const now = new Date();
+        const dayIndex = now.getDay(); 
+        const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+        document.getElementById('clock').innerText = now.toLocaleTimeString('vi-VN');
+        document.getElementById('dayOfWeek').innerText = dayNames[dayIndex];
+
+        document.querySelectorAll('.is-current-cell').forEach(el => el.classList.remove('is-current-cell'));
+        const card = document.getElementById('statusCard');
+        const taskText = document.getElementById('currentTask');
+
+        const currentDayKey = daysMap[dayIndex];
+
+        if (!currentDayKey) {
+            card.classList.remove('is-active');
+            taskText.innerText = '🏖️ Hôm nay là cuối tuần (Không có lịch học)';
+            return;
+        }
+
+        let activeSlot = slots.find(s => {
+            const start = timeToMinutes(s.start);
+            const end = timeToMinutes(s.end);
+            return currentMinutes >= start && currentMinutes < end;
+        });
+
+        if (activeSlot) {
+            card.classList.add('is-active');
+            if (activeSlot.isBreak) {
+                taskText.innerText = `☕ Đang trong thời gian: ${activeSlot.name} (${activeSlot.start} - ${activeSlot.end})`;
+            } else {
+                const subject = timetable[activeSlot.id]?.[currentDayKey] || 'Nghỉ / Không có tiết';
+                taskText.innerText = `📖 Đang trong giờ: ${activeSlot.name} (${activeSlot.start} - ${activeSlot.end}) — Môn: ${subject}`;
+
+                const cell = document.getElementById(`cell-${activeSlot.id}-${currentDayKey}`);
+                if (cell) cell.classList.add('is-current-cell');
+            }
+        } else {
+            card.classList.remove('is-active');
+            if (currentMinutes < timeToMinutes(slots[0].start)) {
+                taskText.innerText = '🌅 Chưa đến giờ truy bài buổi sáng';
+            } else {
+                taskText.innerText = '🌙 Đã hết giờ học trong ngày';
+            }
+        }
+    }
+
+    renderDisplayTable();
+    updateTimeline();
+    setInterval(updateTimeline, 1000);
+</script>
+
+</body>
+</html>
